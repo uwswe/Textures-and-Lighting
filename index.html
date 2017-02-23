@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<!--
+Andre Jenkins
+University of Washington
+Professor Leslie Kalmin
+Winter 2017
+Homework #4
+References: Plant textures are from http://planetpixelemporium.com/earth.html
+-->
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>UW | 3D Graphics</title>
+    <style>
+        body {
+            text-align: center;
+        }
+    </style>
+    <script src="lib/three.js"></script> <!-- Location of the three.js library. -->
+    <script src="lib/threeCSG.js"></script> <!-- Location of the Constructive Solid Geometry library. -->
+    <script src="lib/OrbitControls.js"></script> <!-- Location of the Input Class -->
+
+</head>
+
+<body>
+<h1>Textures and Lighting</h1>
+<p>Andre's big move to WebGL</p>
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+<script>
+
+    var controls;
+    var mouse = { x: 0, y: 0 };
+
+    // The 3 basic things we need to have three.js display in the browser {scene, camera, renderer}
+    // SCENE
+    var scene = new THREE.Scene(); // Create a Three.js scene object.
+
+    // CAMERA
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000); // Define the perspective camera's attributes.
+    camera.position.set(0, 0, 150);
+    camera.lookAt(scene.position);
+
+    // RENDERER
+    var renderer = window.WebGLRenderingContext ? new THREE.WebGLRenderer() : new THREE.CanvasRenderer(); // Fallback to canvas renderer, if necessary.
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the WebGL viewport.
+    document.getElementById( 'ThreeJS' );
+    document.body.appendChild( renderer.domElement );
+
+    // CONTROLS
+    controls = new THREE.OrbitControls( camera, renderer.domElement);
+
+    // LISTENERS
+    // when the mouse moves, call the given function
+    document.addEventListener( 'mousedown', onMouseDrag, false );
+
+    // GEOMETRY SIZES
+    var geometry1Size = 20;
+    var geometry3Size = 15;
+
+    // GEOMETRY DEFINITIONS
+    var geometry = new THREE.BoxGeometry(geometry1Size, geometry1Size, geometry1Size);
+    var geometry2 = new THREE.SphereGeometry( 8, 32, 32 );
+    var geometry3 = new THREE.BoxGeometry(geometry3Size, geometry3Size, geometry3Size);
+    var geometry4 = new THREE.TetrahedronGeometry(20, 0);
+    var geometry5 = new THREE.SphereGeometry( 8, 32, 32 );
+    // var geometry6 is not created because we are using two geomtries to create a new one
+
+    // MATERIAL DEFINITIONS
+    var material = new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        map: new THREE.TextureLoader().load('textures/uw_emblem.jpg')}); // UW emblem texture
+    var material2 = new THREE.MeshPhongMaterial({
+        bumpMap: new THREE.TextureLoader().load('textures/earthbump1k.jpg'), // earth texture
+        map: new THREE.TextureLoader().load('textures/earthmap1k.jpg'), // earth bump map texture
+        bumpScale: 0.5});
+    var material3 = new THREE.MeshStandardMaterial ({
+        color: 0x3c3f41});
+    var material4 = new THREE.MeshNormalMaterial();
+    var material5 = new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        map: new THREE.TextureLoader().load('textures/moon_1024.jpg')}); // moon texture
+    var material6 = new THREE.MeshPhongMaterial({
+        color: 0x084EC0,
+        shininess: 200});
+
+    // MESH DEFINITIONS
+    var mesh1 = new THREE.Mesh(geometry, material);
+    var mesh2 = new THREE.Mesh(geometry2, material2);
+    var mesh3 = new THREE.Mesh(geometry3, material3);
+    var mesh4 = new THREE.Mesh(geometry4, material4);
+    var mesh5 = new THREE.Mesh(geometry5, material5);
+
+    var meshBSP = new ThreeBSP(mesh1);
+    var meshBSP2 = new ThreeBSP(mesh4);
+    var newBSPMesh = meshBSP2.subtract(meshBSP);
+    var mesh6 = newBSPMesh.toMesh(material6);
+
+    // MESH POSITIONS
+    mesh1.position.set(-35, 50, -25);
+    mesh2.position.set(0, 0, 75);
+    mesh3.position.set(35, 0, -25);
+    mesh4.position.set(-65, 0, -25);
+    mesh5.position.set(25, 20, 50);
+    mesh6.position.set(65, 5, -45);
+
+    // LIGHT DEFINITIONS
+    // lights are implemented afterwards because we might want to point a light towards a mesh
+    var ambientlight = new THREE.AmbientLight( 0xffffff, 0.5 );             // soft white light
+    var pointLight = new THREE.PointLight( 0xffffff, 0.65, 1000 );
+    var directionalLight = new THREE.DirectionalLight( 0xffffff, 1, 1000 );
+    directionalLight.target = mesh6;
+
+    // SCENE ADDITIONS
+    scene.add(mesh1);
+    scene.add(mesh2);
+    scene.add(mesh3);
+    scene.add(mesh4);
+    scene.add(mesh5);
+    //scene.add(mesh6);
+    scene.add( ambientlight );
+    scene.add( pointLight );
+    scene.add( directionalLight );
+
+    // function to respond to mouse events
+    function onMouseDrag( event ) {
+        // prioritizes this event handler over others
+        event.preventDefault();
+
+        // update the mouse variable
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    }
+
+    var render = function () {
+        // OBJECT ROTATION AND POSITION UPDATES
+        mesh1.rotation.x += 0.01;
+//        mesh1.rotation.y += 0.01;
+//        mesh1.position.z -= 0.3;
+        mesh2.rotation.y += 0.01;
+        //mesh2.position.z += 0.1;
+        mesh3.rotation.z += 0.01;
+        mesh3.rotation.y -= 0.01;
+        mesh4.rotation.y += 0.01;
+        mesh4.rotation.z += 0.01;
+        mesh5.rotation.y -= 0.01;
+        //mesh6.rotation.x += 0.005;
+
+            // UPDATE ORBIT CONTROLS
+        controls.update();
+
+        // BASICS OF THE RENDER FUNCTION
+        renderer.render(scene, camera);
+        requestAnimationFrame(render); // Calls render() up to 60 frames/second
+    };
+
+    render(); // Start the rendering of the animation frames.
+</script>
+</body>
+</html>
